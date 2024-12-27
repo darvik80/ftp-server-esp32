@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <esp_err.h>
 #include "transport.h"
 
 channel_handler_t ftp_channel_create(channel_transport_handler_t transport);

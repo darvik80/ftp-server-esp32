@@ -1,2 +1,15 @@
-idf_component_register(SRCS ftp-server-esp32.c ftp_server.c transport.c
-                    INCLUDE_DIRS ".")
+FILE(GLOB_RECURSE sources
+        ${CMAKE_SOURCE_DIR}/main/*.c
+        ${CMAKE_SOURCE_DIR}/main/http/*.c
+)
+
+idf_component_register(
+        SRCS ${sources}
+        INCLUDE_DIRS "."
+        REQUIRES
+        http_parser
+        mbedtls
+        esp_event
+        nvs_flash
+        esp_wifi
+)
