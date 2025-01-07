@@ -1,4 +1,6 @@
 .idea
 build
 cmake-build-*
+managed_components
 sdkconfig.old
+main/oss_config.h

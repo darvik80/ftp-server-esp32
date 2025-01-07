@@ -1,6 +1,7 @@
 FILE(GLOB_RECURSE sources
+        ${CMAKE_SOURCE_DIR}/main/*.cpp
         ${CMAKE_SOURCE_DIR}/main/*.c
-        ${CMAKE_SOURCE_DIR}/main/http/*.c
+        ${CMAKE_SOURCE_DIR}/main/oss/*.c
 )
 
 idf_component_register(
@@ -14,4 +15,8 @@ idf_component_register(
         esp_wifi
         tcp_transport
         wpa_supplicant
+        core-esp32
+        extra-services
 )
+
+spiffs_create_partition_image(storage ../data)

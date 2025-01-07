@@ -270,50 +270,60 @@ void tcp_transport_serve(transport_handler_t handler, channel_factory_t factory)
             }
         }
 
-        for (int idx = 0; idx < CONFIG_FTP_MAX_CONNECTIONS; ++idx) {
-            if (transport->clients[idx] != NULL) {
-                tcp_client_transport_t* client = transport->clients[idx];
+        for (int idx = 0; idx < CONFIG_FTP_MAX_CONNECTIONS; ++idx)
+        {
+            if (transport->clients[idx] == NULL) {
+                continue;
+            }
 
-                // receive data
-                if (FD_ISSET(client->socket, &readfds)) {
-                    ssize_t size = recv(client->socket, rx_buf, CONFIG_FTP_RECV_BUF_SIZE, 0);
-                    if (size > 0) {
-                        ESP_LOGI(TAG, "%d Received %zu bytes", client->socket, size);
-                        client->handler->inbound->read(client->handler->inbound, client->handler, rx_buf, size);
-                    } else if (!size) {
-                        ESP_LOGI(TAG, "%d Client disconnected", client->socket);
-                        printf("conn closed");
-                        tcp_client_transport_destroy(client);
-                        transport->clients[idx] = NULL;
-                    } else {
-                        int err = errno;
-                        ESP_LOGI(TAG, "%d Client disconnected, err: %d", client->socket, err);
-                        tcp_client_transport_destroy(client);
-                        transport->clients[idx] = NULL;
-                    }
-                }
+            tcp_client_transport_t* client = transport->clients[idx];
 
-                if (FD_ISSET(client->socket, &writefds)) {
-                    if (client->tx_buf_len > 0) {
-                        const ssize_t size = send(client->socket, client->tx_buf, client->tx_buf_len, 0);
-                        if (size > 0) {
-                            ESP_LOGI(TAG, "%d Sent %zu bytes", client->socket, size);
-                            memmove(client->tx_buf, client->tx_buf + size, client->tx_buf_len - size);
-                            client->tx_buf_len -= size;
-                            if (client->tx_buf_len > 0) {
-                                FD_SET(client->socket, &writefds);
-                            }
-                        } else {
-                            ESP_LOGI(TAG, "%d Client disconnected", client->socket);
-                            tcp_client_transport_destroy(client);
-                            transport->clients[idx] = NULL;
-                        }
-                    }
-                }
-                if (FD_ISSET(client->socket, &efds)) {
+            // receive data
+            if (FD_ISSET(client->socket, &readfds)) {
+                ssize_t size = recv(client->socket, rx_buf, CONFIG_FTP_RECV_BUF_SIZE, 0);
+                if (size > 0) {
+                    ESP_LOGI(TAG, "%d Received %zu bytes", client->socket, size);
+                    client->handler->inbound->read(client->handler->inbound, client->handler, rx_buf, size);
+                } else if (!size) {
+                    ESP_LOGI(TAG, "%d Client disconnected", client->socket);
+                    printf("conn closed");
+                    tcp_client_transport_destroy(client);
+                    transport->clients[idx] = NULL;
+                } else {
+                    int err = errno;
+                    ESP_LOGI(TAG, "%d Client disconnected, err: %d", client->socket, err);
                     tcp_client_transport_destroy(client);
                     transport->clients[idx] = NULL;
                 }
+            }
+        }
+
+        for (int idx = 0; idx < CONFIG_FTP_MAX_CONNECTIONS; ++idx) {
+            if (transport->clients[idx] == NULL) {
+                continue;
+            }
+
+            tcp_client_transport_t* client = transport->clients[idx];
+            if (FD_ISSET(client->socket, &writefds)) {
+                if (client->tx_buf_len > 0) {
+                    const ssize_t size = send(client->socket, client->tx_buf, client->tx_buf_len, 0);
+                    if (size > 0) {
+                        ESP_LOGI(TAG, "%d Sent %zu bytes", client->socket, size);
+                        memmove(client->tx_buf, client->tx_buf + size, client->tx_buf_len - size);
+                        client->tx_buf_len -= size;
+                        if (client->tx_buf_len > 0) {
+                            FD_SET(client->socket, &writefds);
+                        }
+                    } else {
+                        ESP_LOGI(TAG, "%d Client disconnected", client->socket);
+                        tcp_client_transport_destroy(client);
+                        transport->clients[idx] = NULL;
+                    }
+                }
+            }
+            if (FD_ISSET(client->socket, &efds)) {
+                tcp_client_transport_destroy(client);
+                transport->clients[idx] = NULL;
             }
         }
     }

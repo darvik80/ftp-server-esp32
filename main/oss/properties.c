@@ -11,7 +11,8 @@
 #include <stdbool.h>
 #include "esp_log.h"
 #include "esp_check.h"
-#include "http_utils.h"
+
+#include "oss_utils.h"
 
 static const char* TAG = "PROPS";
 #define HEADER_BUFFER (1024)
@@ -20,7 +21,7 @@ static const char* TAG = "PROPS";
 #define mem_check(x) assert(x)
 #endif
 
-properties_handle_t properties_create(void)
+properties_handle_t properties_create()
 {
     properties_handle_t props = calloc(1, sizeof(struct properties));
     ESP_RETURN_ON_FALSE(props, NULL, TAG, "Memory exhausted");
@@ -85,12 +86,12 @@ static esp_err_t properties_new_item(properties_handle_t header, const char* key
 
     item = calloc(1, sizeof(property_t));
     ESP_RETURN_ON_FALSE(item, ESP_ERR_NO_MEM, TAG, "Memory exhausted");
-    http_utils_assign_string(&item->key, key, -1);
+    oss_utils_assign_string(&item->key, key, -1);
     ESP_GOTO_ON_FALSE(item->key, ESP_ERR_NO_MEM, _header_new_item_exit, TAG, "Memory exhausted");
-    http_utils_trim_whitespace(&item->key);
-    http_utils_assign_string(&item->value, value, -1);
+    oss_utils_trim_whitespace(&item->key);
+    oss_utils_assign_string(&item->value, value, -1);
     ESP_GOTO_ON_FALSE(item->value, ESP_ERR_NO_MEM, _header_new_item_exit, TAG, "Memory exhausted");
-    http_utils_trim_whitespace(&item->value);
+    oss_utils_trim_whitespace(&item->value);
     STAILQ_INSERT_TAIL(header, item, next);
     return ret;
 
@@ -116,7 +117,7 @@ esp_err_t properties_set(properties_handle_t props, const char* key, const char*
     {
         free(item->value);
         item->value = strdup(value);
-        http_utils_trim_whitespace(&item->value);
+        oss_utils_trim_whitespace(&item->value);
         return ESP_OK;
     }
     return properties_new_item(props, key, value);

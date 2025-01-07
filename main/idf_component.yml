@@ -14,3 +14,9 @@ dependencies:
   #   # `public` flag doesn't have an effect dependencies of the `main` component.
   #   # All dependencies of `main` are public by default.
   #   public: true
+  core-esp32:
+    path: core-esp32
+    git: https://github.com/darvik80/esp-idf-components.git
+  extra-services:
+    path: components-cpp/extra-services
+    git: https://github.com/darvik80/esp-idf-components.git

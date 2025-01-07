@@ -29,7 +29,7 @@ STAILQ_HEAD(properties, property);
 
 typedef struct property* property_handle_t;
 
-properties_handle_t properties_init(void);
+properties_handle_t properties_create();
 
 esp_err_t properties_clean(properties_handle_t header);
 

@@ -1,0 +1,22 @@
+{
+  "wifi": [
+    {
+      "ssid": "A12A-08",
+      "password": "66778899"
+    },
+    {
+      "ssid": "alibaba-guest",
+      "password": ""
+    }
+  ],
+  "mqtt": [
+    {
+      "type": "local",
+      "uri": "mqtt://media-vn.local",
+      "username": "darvik-home:smartdevice",
+      "password": "smartdevice",
+      "device-name": "ftp-server",
+      "product-name": "darvik-home"
+    }
+  ]
+}
