@@ -15,8 +15,6 @@
 #include <esp_http_client.h>
 #include <esp_log.h>
 
-#include "oss_config.h"
-
 #define MAX_HTTP_RECV_BUFFER 512
 #define MAX_HTTP_OUTPUT_BUFFER 2048
 
@@ -66,11 +64,11 @@ public:
         FreeRTOSTask::execute([]
         {
             oss_config_t oss_config{
-                .endpoint = OSS_BUCKET ".oss-" OSS_REGION ".aliyuncs.com",
-                .access_key_id = OSS_ACCESS_KEY,
-                .access_key_secret = OSS_SECRET_TOCKEN,
-                .region = OSS_REGION,
-                .bucket = OSS_BUCKET,
+                .endpoint = ENV_CONFIG_OSS_BUCKET ".oss-" ENV_CONFIG_OSS_BUCKET ".aliyuncs.com",
+                .access_key_id = ENV_CONFIG_OSS_ACCESS_KEY,
+                .access_key_secret = ENV_CONFIG_OSS_ACCESS_KEY,
+                .region = ENV_CONFIG_OSS_REGION,
+                .bucket = ENV_CONFIG_OSS_BUCKET,
             };
 
             oss_client_handler_t handler;

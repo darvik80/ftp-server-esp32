@@ -69,7 +69,7 @@ void ftp_channel_inbound_line_based_read(channel_inbound_handler_t h, channel_ha
     } else {
         if (capacity - self->size < s) {
             const size_t truncated_size = self->size + s - capacity;
-            memmove(self->data, self->data + truncated_size, capacity -truncated_size);
+            memmove(self->data, self->data + truncated_size, capacity - truncated_size);
             self->size -= truncated_size;
         }
         memcpy(self->data + self->size, d, s);
