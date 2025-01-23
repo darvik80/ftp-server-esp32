@@ -58,6 +58,8 @@ void default_channel_inbound_active(channel_inbound_handler_t h, channel_handler
 
 void default_channel_inbound_inactive(channel_inbound_handler_t h, channel_handler_t c);
 
+void default_channel_inbound_destroy(channel_inbound_adapter_t *handler);
+
 void channel_outbound_active(channel_outbound_handler_t h, channel_handler_t c);
 
 void channel_outbound_write(channel_outbound_handler_t h, channel_handler_t c, const void* d, size_t s);
@@ -68,6 +70,14 @@ void default_channel_outbound_active(channel_outbound_handler_t h, channel_handl
 
 void default_channel_outbound_inactive(channel_outbound_handler_t h, channel_handler_t c);
 
+void default_channel_outbound_destroy(channel_outbound_adapter_t *handler);
+
+void default_channel_read(channel_handler_t ch, void *d, size_t s);
+
+void default_channel_write(channel_handler_t ch, const void *d, size_t s);
+
+void default_channel_destroy(channel_handler_t handler);
+
 /*
  * create tcp transport
 */
@@ -75,8 +85,10 @@ typedef struct tcp_transport_t* transport_handler_t;
 
 typedef channel_handler_t (*channel_factory_t)(channel_transport_handler_t);
 
-esp_err_t tcp_transport_create(transport_handler_t *handler);
+esp_err_t tcp_transport_create(transport_handler_t *handler, int port, int max_conn);
 
 void tcp_transport_serve(transport_handler_t handler, channel_factory_t factory);
+
+int tcp_transport_get_port(transport_handler_t handler);
 
 void tcp_transport_destroy(transport_handler_t handler);

@@ -87,7 +87,7 @@ public:
             FreeRTOSTask::execute([]
             {
                 transport_handler_t handler;
-                tcp_transport_create(&handler);
+                tcp_transport_create(&handler, CONFIG_FTP_SERVER_PORT, CONFIG_FTP_MAX_CONNECTIONS);
                 tcp_transport_serve(handler, ftp_channel_create);
                 tcp_transport_destroy(handler);
             }, "ftp_server", 4096);

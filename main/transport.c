@@ -43,6 +43,13 @@ void default_channel_inbound_inactive(channel_inbound_handler_t h, channel_handl
     }
 }
 
+void default_channel_inbound_destroy(channel_inbound_adapter_t *handler) {
+    if (handler->next && handler->next->destroy) {
+        handler->next->destroy(handler->next);
+    }
+    free(handler);
+}
+
 void channel_outbound_active(channel_outbound_handler_t h, channel_handler_t c) {
     h->active(h, c);
 }
@@ -65,6 +72,32 @@ void default_channel_outbound_inactive(channel_outbound_handler_t h, channel_han
     if (h->next) {
         h->next->inactive(h, c);
     }
+}
+
+void default_channel_outbound_destroy(channel_outbound_adapter_t *handler) {
+    if (handler->next && handler->next->destroy) {
+        handler->next->destroy(handler->next);
+    }
+    free(handler);
+}
+
+void default_channel_read(channel_handler_t ch, void *d, size_t s) {
+    ch->inbound->read(ch->inbound, ch, d, s);
+}
+
+void default_channel_write(channel_handler_t ch, const void *d, size_t s) {
+    ch->transport->send(ch->transport, d, s);
+}
+
+void default_channel_destroy(channel_handler_t handler) {
+    if (handler->inbound && handler->inbound->destroy) {
+        handler->inbound->destroy(handler->inbound);
+    }
+    if (handler->outbound && handler->outbound->destroy) {
+        handler->outbound->destroy(handler->outbound);
+    }
+
+    free(handler);
 }
 
 typedef struct tcp_client_transport_t {
@@ -114,7 +147,8 @@ tcp_client_transport_t* tcp_client_transport_create(const int socket) {
 
 typedef struct tcp_transport_t {
     int socket;
-    tcp_client_transport_t* clients[CONFIG_FTP_MAX_CONNECTIONS];
+    int max_conn;
+    tcp_client_transport_t** clients;
 } tcp_transport_t;
 
 esp_err_t errno2_esp_err(int err) {
@@ -142,14 +176,16 @@ esp_err_t errno2_esp_err(int err) {
     }
 }
 
-esp_err_t tcp_transport_create(transport_handler_t *handler) {
+esp_err_t tcp_transport_create(transport_handler_t *handler, int port, int max_conn) {
     esp_err_t err = ESP_OK;
     tcp_transport_t *transport = malloc(sizeof(tcp_transport_t));
+    transport->max_conn = max_conn;
+    transport->clients = malloc(sizeof(tcp_client_transport_t*) * max_conn);
 
     /* Server address */
     struct sockaddr_in server_address = (struct sockaddr_in){
         .sin_family = AF_INET,
-        .sin_port = htons(CONFIG_FTP_SERVER_PORT),
+        .sin_port = htons(port),
         .sin_addr.s_addr = INADDR_ANY,
     };
 
@@ -178,11 +214,11 @@ esp_err_t tcp_transport_create(transport_handler_t *handler) {
         goto FAIL;
     }
 
-    for (int idx = 0; idx < CONFIG_FTP_MAX_CONNECTIONS; idx++) {
+    for (int idx = 0; idx < max_conn; idx++) {
         transport->clients[idx] = NULL;
     }
     *handler = transport;
-    if (listen(transport->socket, CONFIG_FTP_MAX_CONNECTIONS)) {
+    if (listen(transport->socket, max_conn)) {
         err = errno2_esp_err(errno);
         ESP_LOGE(TAG, "Cannot listen on socket %d", transport->socket);
         goto FAIL;
@@ -221,7 +257,7 @@ void tcp_transport_serve(transport_handler_t handler, channel_factory_t factory)
 
         int socket_idx = 0;
         int max_sd = transport->socket;
-        for (socket_idx = 0; socket_idx < CONFIG_FTP_MAX_CONNECTIONS; ++socket_idx) {
+        for (socket_idx = 0; socket_idx < handler->max_conn; ++socket_idx) {
             tcp_client_transport_t* client = transport->clients[socket_idx];
             if (client == NULL) {
                 break;
@@ -251,7 +287,7 @@ void tcp_transport_serve(transport_handler_t handler, channel_factory_t factory)
             goto EXIT;
         }
 
-        if (socket_idx != CONFIG_FTP_MAX_CONNECTIONS) {
+        if (socket_idx != handler->max_conn) {
             // If server socket has activity, it's a new connection
             if (FD_ISSET(transport->socket, &readfds)) {
                 int sock = accept(transport->socket, (struct sockaddr *) &address, (socklen_t *) &addrlen);
@@ -270,7 +306,7 @@ void tcp_transport_serve(transport_handler_t handler, channel_factory_t factory)
             }
         }
 
-        for (int idx = 0; idx < CONFIG_FTP_MAX_CONNECTIONS; ++idx)
+        for (int idx = 0; idx < handler->max_conn; ++idx)
         {
             if (transport->clients[idx] == NULL) {
                 continue;
@@ -298,7 +334,7 @@ void tcp_transport_serve(transport_handler_t handler, channel_factory_t factory)
             }
         }
 
-        for (int idx = 0; idx < CONFIG_FTP_MAX_CONNECTIONS; ++idx) {
+        for (int idx = 0; idx < handler->max_conn; ++idx) {
             if (transport->clients[idx] == NULL) {
                 continue;
             }
@@ -329,7 +365,7 @@ void tcp_transport_serve(transport_handler_t handler, channel_factory_t factory)
     }
 
 EXIT:
-    for (int idx = 0; idx < CONFIG_FTP_MAX_CONNECTIONS; ++idx) {
+    for (int idx = 0; idx < handler->max_conn; ++idx) {
         if (transport->clients[idx] != NULL) {
             tcp_client_transport_destroy(transport->clients[idx]);
         }
@@ -337,11 +373,22 @@ EXIT:
     free(rx_buf);
 }
 
+int tcp_transport_get_port(transport_handler_t handler) {
+    struct sockaddr_in sin;
+    socklen_t len = sizeof(sin);
+    if (getsockname(handler->socket, (struct sockaddr *)&sin, &len) == -1) {
+        return -1;
+    }
+
+    return ntohs(sin.sin_port);
+}
+
 void tcp_transport_destroy(transport_handler_t handler) {
-    for (int idx = 0; idx < CONFIG_FTP_MAX_CONNECTIONS; ++idx) {
+    for (int idx = 0; idx < handler->max_conn; ++idx) {
         if (handler->clients[idx] != NULL) {
             tcp_client_transport_destroy(handler->clients[idx]);
         }
     }
+    free(handler->clients);
     free(handler);
 }
