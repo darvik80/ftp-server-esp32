@@ -64,9 +64,9 @@ public:
         FreeRTOSTask::execute([]
         {
             oss_config_t oss_config{
-                .endpoint = ENV_CONFIG_OSS_BUCKET ".oss-" ENV_CONFIG_OSS_BUCKET ".aliyuncs.com",
+                .endpoint = ENV_CONFIG_OSS_BUCKET ".oss-" ENV_CONFIG_OSS_REGION ".aliyuncs.com",
                 .access_key_id = ENV_CONFIG_OSS_ACCESS_KEY,
-                .access_key_secret = ENV_CONFIG_OSS_ACCESS_KEY,
+                .access_key_secret = ENV_CONFIG_OSS_ACCESS_KEY_SECRET,
                 .region = ENV_CONFIG_OSS_REGION,
                 .bucket = ENV_CONFIG_OSS_BUCKET,
             };
@@ -74,8 +74,8 @@ public:
             oss_client_handler_t handler;
             oss_client_create(&oss_config, &handler);
             oss_client_get(handler, "0000003f01394261876aca024cae0ba8_0041cd580320455e90a9427891fc5124.jpg", callback);
-            oss_client_get(handler, "0000003f01394261876aca024cae0ba8_0041cd580320455e90a9427891fc5124.jpg", callback);
-            oss_client_get(handler, "0041cd580320455e90a9427891fc5124.jpg", callback);
+            //oss_client_get(handler, "0000003f01394261876aca024cae0ba8_0041cd580320455e90a9427891fc5124.jpg", callback);
+            //oss_client_get(handler, "0041cd580320455e90a9427891fc5124.jpg", callback);
             oss_client_destroy(handler);
         }, "oss", 4096);
     }
@@ -104,13 +104,13 @@ protected:
     {
         getRegistry().getEventBus().subscribe(shared_from_this());
         getRegistry().create<WifiService>();
-        auto& mqtt = getRegistry().create<MqttService>();
+        //auto& mqtt = getRegistry().create<MqttService>();
         getRegistry().create<TelemetryService>();
         getRegistry().create<SNTPService>();
 
-        mqtt.addJsonHandler<ConfigMessage>("/sys/config", MQTT_SUB_RELATIVE);
-        mqtt.addJsonHandler<ConfigMessage>("/sys/test", MQTT_SUB_ABSOLUTE);
-        mqtt.addJsonProcessor<Telemetry>("/sys/telemetry");
+        //mqtt.addJsonHandler<ConfigMessage>("/sys/config", MQTT_SUB_RELATIVE);
+        //mqtt.addJsonHandler<ConfigMessage>("/sys/test", MQTT_SUB_ABSOLUTE);
+        //mqtt.addJsonProcessor<Telemetry>("/sys/telemetry");
     }
 };
 

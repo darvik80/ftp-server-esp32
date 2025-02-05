@@ -531,6 +531,8 @@ esp_err_t oss_sign_request(oss_sign_data_t* sign_data, const oss_config_t *confi
     properties_set(sign_data->headers, OSS_AUTHORIZATION, result);
     esp_http_client_set_header(sign_data->client, OSS_AUTHORIZATION, result);
 
+    ESP_LOGI("oss", "Sign: %s", result);
+
     if (result)
     {
         free(result);
